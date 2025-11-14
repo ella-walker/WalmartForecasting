@@ -1,0 +1,129 @@
+---
+title: "walmart"
+author: "Julia Nilsson"
+format: html
+editor: visual
+---
+
+```{r}
+library(vroom)
+library(lubridate)
+library(tidyverse)
+library(tidymodels)
+library(recipes)
+library(embed)
+library(dials)
+library(GGally)
+library(corrplot)
+library(hexbin)
+
+# "C:\Users\julia\OneDrive - Brigham Young University\Desktop\stat 348\restaurant-revenue-prediction\train.csv"
+
+train <- vroom("C:/Users/julia/OneDrive - Brigham Young University/Desktop/stat 348/walmart/train.csv") %>%
+    mutate(Date = mdy(Date))
+  
+
+test <- vroom("C:/Users/julia/OneDrive - Brigham Young University/Desktop/stat 348/walmart/test.csv")
+
+features <- vroom("C:/Users/julia/OneDrive - Brigham Young University/Desktop/stat 348/walmart/features.csv") %>% 
+      mutate(Date = mdy(Date))
+
+stores <- vroom("C:/Users/julia/OneDrive - Brigham Young University/Desktop/stat 348/walmart/stores.csv")
+
+```
+
+```{r}
+
+big <- train %>%
+  left_join(features, by = c("Store", "Date", "IsHoliday")) %>%
+  left_join(stores,   by = "Store")
+
+#executive decision to say NA is 0 for markdowns
+big <- big %>%
+  mutate(across(starts_with("MarkDown"), ~replace_na(.x, 0)))
+
+
+onehot <- model.matrix(~ Type - 1, data = big)
+big1 <- cbind(big, onehot) %>% 
+  select(-Type)
+
+big1$IsHoliday <- as.numeric(big1$IsHoliday)
+
+
+
+```
+
+EDA!
+
+```{r}
+ggplot(big, aes(x = Weekly_Sales)) +
+  geom_histogram(bins = 30, fill = "skyblue", color = "white") +
+  labs(title = "Weekly Sales Distribution")
+
+ggplot(big, aes(x = IsHoliday, y = Weekly_Sales, fill = IsHoliday)) +
+  geom_boxplot() +
+  labs(title = "Weekly Sales: Holiday vs Non-Holiday")
+
+ggplot(big, aes(x = Type, y = Weekly_Sales, fill = Type)) +
+  geom_boxplot() +
+  labs(title = "Weekly Sales by Store Type")
+
+#this one takes too long but it's helpful
+# ggplot(big, aes(x = Temperature, y = Weekly_Sales)) +
+#   geom_point(alpha = 0.2, color = "purple") +
+#   scale_y_log10() +
+#   labs(title = "Weekly Sales vs Temperature (log scale)")
+
+
+```
+
+```{r}
+
+varlist <- big %>%
+  select(where(is.numeric)) %>%
+  names()
+
+
+
+# correlation pair plot
+# ggpairs(num_big)
+
+cor_matrix <- cor(big1[, varlist])
+corrplot(cor_matrix, method = "circle", type = "upper", 
+         col = colorRampPalette(c("red", "white", "blue"))(200),
+         tl.col = "black", tl.srt = 45, addCoef.col = "black",
+         tl.cex = .8,
+         number.cex = .8)
+
+```
+
+```{r}
+
+
+ggplot(big, aes(x = Temperature, y = Weekly_Sales)) +
+  stat_binhex(bins = 40) +
+  scale_fill_viridis_c() +
+  scale_y_log10() +
+  labs(title = "Weekly Sales vs Temperature (hexbin)")
+
+ggplot(big, aes(x = Temperature, y = Weekly_Sales)) +
+  geom_bin2d(bins = 40) +
+  scale_fill_viridis_c() +
+  scale_y_log10()
+
+
+
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
