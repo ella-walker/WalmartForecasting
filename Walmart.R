@@ -16,12 +16,12 @@ library(ggplot2)
 library(GGally)
 
 # Read in test and training data
-train <- vroom("~/Documents/STAT 348/WalmartForecasting/walmart-recruiting-store-sales-forecasting/train.csv.zip") |>
-  mutate(Date = mdy(Date))
-test <- vroom("~/Documents/STAT 348/WalmartForecasting/walmart-recruiting-store-sales-forecasting/test.csv.zip")
+train <- vroom("~/Documents/STAT 348/WalmartForecasting/walmart-recruiting-store-sales-forecasting/train.csv") |>
+  mutate(Date = ymd(Date))
+test <- vroom("~/Documents/STAT 348/WalmartForecasting/walmart-recruiting-store-sales-forecasting/test.csv")
 stores <- vroom("~/Documents/STAT 348/WalmartForecasting/walmart-recruiting-store-sales-forecasting/stores.csv")
-features <- vroom("~/Documents/STAT 348/WalmartForecasting/walmart-recruiting-store-sales-forecasting/features.csv.zip") |>
-  mutate(Date = mdy(Date))
+features <- vroom("~/Documents/STAT 348/WalmartForecasting/walmart-recruiting-store-sales-forecasting/features.csv") |>
+  mutate(Date = ymd(Date))
 
 # Cleaning and joining
 big <- train %>%
@@ -40,11 +40,11 @@ big1 <- cbind(big, onehot) %>%
 big1$IsHoliday <- as.numeric(big1$IsHoliday)
 
 # EDA
-skim(walmartTrain)
-glimpse(walmartTrain)
-plot_histogram(walmartTrain)
-plot_correlation(walmartTrain)
-summary(walmartTrain)
+skim(big1)
+glimpse(big1)
+plot_histogram(big1)
+plot_correlation(big1)
+summary(big1)
 
 # Data types present an issue, IsHoliday is a True/False we should encode as 0/1 so it is useful
 # Also maybe date is bad or should be filtered

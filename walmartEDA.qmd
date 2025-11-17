@@ -1,0 +1,77 @@
+---
+title: "Walmart EDA"
+author: "Ella Walker"
+format: pdf
+editor: visual
+---
+
+## Walmart EDA
+
+When I exploring the Walmart data I ran into several issues. I have outlined three main issues that will require adjustments. As I was conducting this EDA the inital issue that I ran into was the size of the dataset. I mutated date to be a date format because initially it was taking several minutes to load any sort of plot or figure.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+# Useful libraries for this analysis
+library(vroom)
+library(recipes)
+library(tidyverse)
+library(tidymodels)
+library(ggmosaic)
+library(skimr)
+library(dplyr)
+library(DataExplorer)
+library(corrplot)
+library(embed)
+library(discrim)
+library(kernlab)
+library(themis)
+library(ggplot2)
+library(GGally)
+
+train <- vroom("~/Documents/STAT 348/WalmartForecasting/walmart-recruiting-store-sales-forecasting/train.csv") |>
+  mutate(Date = ymd(Date))
+test <- vroom("~/Documents/STAT 348/WalmartForecasting/walmart-recruiting-store-sales-forecasting/test.csv")
+stores <- vroom("~/Documents/STAT 348/WalmartForecasting/walmart-recruiting-store-sales-forecasting/stores.csv")
+features <- vroom("~/Documents/STAT 348/WalmartForecasting/walmart-recruiting-store-sales-forecasting/features.csv") |>
+  mutate(Date = ymd(Date))
+
+big <- train %>%
+  left_join(features, by = c("Store", "Date", "IsHoliday")) %>%
+  left_join(stores,   by = "Store")
+```
+
+1.  Missing values
+
+```{r}
+#| echo: false
+
+skim(big)
+```
+
+Markdown 1-5 contains promotional sales. There are thousands of missing values. However, making missing values = 0 may cause issues as the dataset states that it only has data for Markdown after November 2011 and it's not always available for all stores. This makes the missing values more complicated to deal with because it is not accurate to replace all missing values with 0.
+
+2.  Multicollinearity
+
+```{r}
+#| echo: false
+
+plot_correlation(big)
+```
+
+Store type A and B are highly negatively correlated and Store A and size are high postively correlated. This does not introduce an issue in the data itself but it may cause problems if we use a linear regression model. It is logical that a certain store type would consistently be large and another type consistently small. However, we don't want to include two variables that are highly correlated with one another in a regression analysis.
+
+3.  Outliers
+
+```{r}
+#| echo: false
+
+ggplot(big, aes(x = Type, y = Weekly_Sales, fill = Type)) +
+  geom_boxplot() +
+  labs(title = "Weekly Sales by Store Type") + 
+  scale_y_continuous(labels = comma)
+```
+
+There are a significant amount of outliers when looking at store type and weekly sales. The data is highly skewed as we can see. However, this is also not unexpected as there are many holidays included in the dataset where we expect sales to be unusually high. If we are using a model type that has normality assumptions, like linear regression, this will be an issue. We may consider transforming the data using a log transformation.
